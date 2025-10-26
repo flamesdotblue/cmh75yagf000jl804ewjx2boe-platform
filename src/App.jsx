@@ -1,41 +1,151 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import NavBar from './components/NavBar';
-import Hero from './components/Hero';
-import SectionRow from './components/SectionRow';
 import Footer from './components/Footer';
+import SeriesDetail from './components/SeriesDetail';
+import Reader from './components/Reader';
+
+const SAMPLE_SERIES = {
+  id: 'series-1',
+  title: 'Crimson Shards',
+  author: 'A. Kuro',
+  year: 2024,
+  status: 'Ongoing',
+  genres: ['Action', 'Fantasy', 'Adventure'],
+  rating: 4.6,
+  ratingBreakdown: [60, 25, 10, 4, 1], // percent per star 5..1
+  synopsis:
+    'In a realm where ancient relics pulse with forbidden power, a wayward courier and a fallen knight are thrust together by fate. As fractured kingdoms collide, they must traverse haunted skylines and crystal deserts to gather the Crimson Shards — before a silent cabal reshapes destiny itself.',
+  cover:
+    'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop',
+  chapters: [
+    {
+      id: 'ch-10',
+      title: 'Chapter 10 · Ember Oath',
+      date: '2025-10-05',
+      images: [
+        'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1920&auto=format&fit=crop',
+      ],
+    },
+    {
+      id: 'ch-9',
+      title: 'Chapter 9 · Glass Choir',
+      date: '2025-09-18',
+      images: [
+        'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1545972152-705f1074e5a0?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=1920&auto=format&fit=crop',
+      ],
+    },
+    {
+      id: 'ch-8',
+      title: 'Chapter 8 · Moonlit Vale',
+      date: '2025-09-01',
+      images: [
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1535223289827-42f1e9919769?q=80&w=1920&auto=format&fit=crop',
+      ],
+    },
+  ],
+};
+
+const LAST_READ_KEY = 'mf:lastRead:series-1';
 
 export default function App() {
-  const newReleases = [
-    { id: 'nr1', title: 'Crimson Shards', author: 'A. Kuro', genres: ['Action', 'Fantasy'], rating: 4.6, cover: 'https://images.unsplash.com/photo-1520975922172-663b0f2bb3b9?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'nr2', title: 'Neon Echo', author: 'R. Sato', genres: ['Sci-Fi', 'Drama'], rating: 4.2, cover: 'https://images.unsplash.com/photo-1545972152-705f1074e5a0?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'nr3', title: 'Petals of Steel', author: 'H. Lin', genres: ['Romance', 'Cyberpunk'], rating: 4.5, cover: 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'nr4', title: 'Moonlit Vale', author: 'E. Aria', genres: ['Fantasy'], rating: 4.1, cover: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop' }
-  ];
+  const [view, setView] = useState('series'); // 'series' | 'reader'
+  const [currentChapterId, setCurrentChapterId] = useState(null);
+  const [initialReaderState, setInitialReaderState] = useState(null);
 
-  const trending = [
-    { id: 'tr1', title: 'Dragon’s Circuit', author: 'K. Tan', genres: ['Action'], rating: 4.9, cover: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'tr2', title: 'Velvet Skyline', author: 'I. Nox', genres: ['Mystery'], rating: 4.7, cover: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'tr3', title: 'Aurora March', author: 'M. Rei', genres: ['Adventure'], rating: 4.8, cover: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'tr4', title: 'Silent Harbor', author: 'T. En', genres: ['Drama'], rating: 4.6, cover: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1200&auto=format&fit=crop' }
-  ];
+  const chaptersById = useMemo(() => {
+    const m = new Map();
+    SAMPLE_SERIES.chapters.forEach((c) => m.set(c.id, c));
+    return m;
+  }, []);
 
-  const editors = [
-    { id: 'ed1', title: 'Glass Garden', author: 'U. Ame', genres: ['Slice of Life'], rating: 4.3, cover: 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'ed2', title: 'Ember Crown', author: 'S. Noor', genres: ['Fantasy', 'Romance'], rating: 4.4, cover: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'ed3', title: 'Starlit Courier', author: 'Y. Vega', genres: ['Adventure', 'Sci-Fi'], rating: 4.5, cover: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200&auto=format&fit=crop' },
-    { id: 'ed4', title: 'Paper Moons', author: 'N. Lumi', genres: ['Romance'], rating: 4.2, cover: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=1200&auto=format&fit=crop' }
-  ];
+  useEffect(() => {
+    const saved = localStorage.getItem(LAST_READ_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      setCurrentChapterId(data.chapterId || SAMPLE_SERIES.chapters[0].id);
+    } else {
+      setCurrentChapterId(SAMPLE_SERIES.chapters[0].id);
+    }
+  }, []);
+
+  const handleOpenReader = (chapterId, resume = true) => {
+    const saved = localStorage.getItem(LAST_READ_KEY);
+    let initial = { mode: 'webtoon' };
+    if (resume && saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.chapterId === chapterId) {
+          initial = { ...initial, pageIndex: data.pageIndex, scrollY: data.scrollY, mode: data.mode || 'webtoon', rtl: data.rtl || false };
+        }
+      } catch {}
+    }
+    setCurrentChapterId(chapterId);
+    setInitialReaderState(initial);
+    setView('reader');
+  };
+
+  const handleSaveProgress = (payload) => {
+    localStorage.setItem(
+      LAST_READ_KEY,
+      JSON.stringify({
+        chapterId: payload.chapterId,
+        pageIndex: payload.pageIndex || 0,
+        scrollY: payload.scrollY || 0,
+        mode: payload.mode || 'webtoon',
+        rtl: payload.rtl || false,
+        ts: Date.now(),
+      })
+    );
+  };
+
+  const handleExitReader = () => {
+    setView('series');
+  };
+
+  const continueInfo = useMemo(() => {
+    const saved = localStorage.getItem(LAST_READ_KEY);
+    if (!saved) return null;
+    try {
+      const data = JSON.parse(saved);
+      const chap = chaptersById.get(data.chapterId);
+      if (!chap) return null;
+      return { chapter: chap, pageIndex: data.pageIndex || 0, mode: data.mode || 'webtoon' };
+    } catch {
+      return null;
+    }
+  }, [chaptersById, view]);
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
       <NavBar />
-      <main className=""> 
-        <Hero />
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 space-y-14 py-12">
-          <SectionRow title="New Releases" items={newReleases} accent="from-orange-500/30 via-red-500/20 to-transparent" />
-          <SectionRow title="Trending" items={trending} ranked accent="from-fuchsia-500/20 via-purple-500/20 to-transparent" />
-          <SectionRow title="Editor’s Picks" items={editors} accent="from-emerald-500/20 via-teal-500/20 to-transparent" />
-        </div>
+      <main className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {view === 'series' && (
+          <SeriesDetail
+            series={SAMPLE_SERIES}
+            onReadChapter={handleOpenReader}
+            continueInfo={continueInfo}
+          />
+        )}
+        {view === 'reader' && currentChapterId && (
+          <Reader
+            seriesId={SAMPLE_SERIES.id}
+            chapter={chaptersById.get(currentChapterId)}
+            chapters={SAMPLE_SERIES.chapters}
+            onSaveProgress={handleSaveProgress}
+            onExit={handleExitReader}
+            initialState={initialReaderState}
+            onChangeChapter={(chId) => setCurrentChapterId(chId)}
+          />
+        )}
       </main>
       <Footer />
     </div>
