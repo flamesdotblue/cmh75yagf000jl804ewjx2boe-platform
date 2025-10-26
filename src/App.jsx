@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate, useParams, Navigate } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import Footer from './components/Footer';
 import HomePage from './components/HomePage';
@@ -62,10 +63,63 @@ const SAMPLE_SERIES = {
 
 const LAST_READ_KEY = 'mf:lastRead:series-1';
 
-export default function App() {
-  const [view, setView] = useState('home'); // 'home' | 'series' | 'reader' | 'admin' | 'library' | 'profile'
-  const [currentChapterId, setCurrentChapterId] = useState(null);
-  const [initialReaderState, setInitialReaderState] = useState(null);
+function useLastRead() {
+  const [last, setLast] = useState(null);
+  useEffect(() => {
+    const saved = localStorage.getItem(LAST_READ_KEY);
+    if (!saved) return;
+    try {
+      setLast(JSON.parse(saved));
+    } catch {}
+  }, []);
+  const save = (payload) => {
+    const data = {
+      chapterId: payload.chapterId,
+      pageIndex: payload.pageIndex || 0,
+      scrollY: payload.scrollY || 0,
+      mode: payload.mode || 'webtoon',
+      rtl: payload.rtl || false,
+      ts: Date.now(),
+    };
+    localStorage.setItem(LAST_READ_KEY, JSON.stringify(data));
+    setLast(data);
+  };
+  return { last, save };
+}
+
+function TopLevelNav() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const activeKey = React.useMemo(() => {
+    if (location.pathname.startsWith('/series')) return 'series';
+    if (location.pathname.startsWith('/read')) return 'reader';
+    if (location.pathname.startsWith('/library')) return 'library';
+    if (location.pathname.startsWith('/profile')) return 'profile';
+    if (location.pathname.startsWith('/admin')) return 'admin';
+    return 'home';
+  }, [location.pathname]);
+
+  return (
+    <HomeQuickNav
+      active={activeKey}
+      onNavigate={(k) => {
+        if (k === 'home') navigate('/');
+        if (k === 'series') navigate(`/series/${SAMPLE_SERIES.id}`);
+        if (k === 'reader') navigate(`/read/${SAMPLE_SERIES.id}/${SAMPLE_SERIES.chapters[0].id}`);
+        if (k === 'library') navigate('/library');
+        if (k === 'profile') navigate('/profile');
+        if (k === 'admin') navigate('/admin');
+      }}
+      onQuickRead={() => navigate(`/series/${SAMPLE_SERIES.id}`)}
+    />
+  );
+}
+
+function SeriesRoute() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { last } = useLastRead();
 
   const chaptersById = useMemo(() => {
     const m = new Map();
@@ -73,110 +127,98 @@ export default function App() {
     return m;
   }, []);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(LAST_READ_KEY);
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        setCurrentChapterId(data.chapterId || SAMPLE_SERIES.chapters[0].id);
-      } catch {
-        setCurrentChapterId(SAMPLE_SERIES.chapters[0].id);
-      }
-    } else {
-      setCurrentChapterId(SAMPLE_SERIES.chapters[0].id);
-    }
-  }, []);
+  const continueInfo = useMemo(() => {
+    if (!last) return null;
+    const chap = chaptersById.get(last.chapterId);
+    if (!chap) return null;
+    return { chapter: chap, pageIndex: last.pageIndex || 0, mode: last.mode || 'webtoon' };
+  }, [last, chaptersById]);
 
   const handleOpenReader = (chapterId, resume = true) => {
-    const saved = localStorage.getItem(LAST_READ_KEY);
-    let initial = { mode: 'webtoon' };
-    if (resume && saved) {
-      try {
-        const data = JSON.parse(saved);
-        if (data.chapterId === chapterId) {
-          initial = {
-            ...initial,
-            pageIndex: data.pageIndex,
-            scrollY: data.scrollY,
-            mode: data.mode || 'webtoon',
-            rtl: data.rtl || false,
-          };
-        }
-      } catch {}
-    }
-    setCurrentChapterId(chapterId);
-    setInitialReaderState(initial);
-    setView('reader');
+    navigate(`/read/${id}/${chapterId}`, { state: { resume } });
   };
 
-  const handleSaveProgress = (payload) => {
-    localStorage.setItem(
-      LAST_READ_KEY,
-      JSON.stringify({
-        chapterId: payload.chapterId,
-        pageIndex: payload.pageIndex || 0,
-        scrollY: payload.scrollY || 0,
-        mode: payload.mode || 'webtoon',
-        rtl: payload.rtl || false,
-        ts: Date.now(),
-      })
-    );
+  if (id !== SAMPLE_SERIES.id) return <Navigate to={`/series/${SAMPLE_SERIES.id}`} replace />;
+
+  return (
+    <SeriesDetail
+      series={SAMPLE_SERIES}
+      onReadChapter={handleOpenReader}
+      continueInfo={continueInfo}
+    />
+  );
+}
+
+function ReaderRoute() {
+  const { seriesId, chapterId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { last, save } = useLastRead();
+
+  const chaptersById = useMemo(() => {
+    const m = new Map();
+    SAMPLE_SERIES.chapters.forEach((c) => m.set(c.id, c));
+    return m;
+  }, []);
+
+  const chapter = chaptersById.get(chapterId) || SAMPLE_SERIES.chapters[0];
+
+  const initialReaderState = React.useMemo(() => {
+    if (!last || last.chapterId !== chapterId || location.state?.resume === false) return { mode: 'webtoon' };
+    return {
+      mode: last.mode || 'webtoon',
+      pageIndex: last.pageIndex,
+      scrollY: last.scrollY,
+      rtl: last.rtl || false,
+    };
+  }, [last, chapterId, location.state]);
+
+  const handleChangeChapter = (nextChapterId) => {
+    navigate(`/read/${seriesId}/${nextChapterId}`);
   };
 
-  const continueInfo = useMemo(() => {
-    const saved = localStorage.getItem(LAST_READ_KEY);
-    if (!saved) return null;
-    try {
-      const data = JSON.parse(saved);
-      const chap = chaptersById.get(data.chapterId);
-      if (!chap) return null;
-      return { chapter: chap, pageIndex: data.pageIndex || 0, mode: data.mode || 'webtoon' };
-    } catch {
-      return null;
-    }
-  }, [chaptersById, view]);
+  const handleExit = () => navigate(`/series/${seriesId}`);
 
+  if (seriesId !== SAMPLE_SERIES.id) return <Navigate to={`/read/${SAMPLE_SERIES.id}/${SAMPLE_SERIES.chapters[0].id}`} replace />;
+
+  return (
+    <Reader
+      seriesId={SAMPLE_SERIES.id}
+      chapter={chapter}
+      chapters={SAMPLE_SERIES.chapters}
+      onSaveProgress={save}
+      onExit={handleExit}
+      initialState={initialReaderState}
+      onChangeChapter={handleChangeChapter}
+    />
+  );
+}
+
+function AppShell() {
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
       <NavBar />
-
-      <HomeQuickNav
-        active={view}
-        onNavigate={(next) => setView(next)}
-        onQuickRead={() => {
-          setView('series');
-        }}
-      />
-
+      <TopLevelNav />
       <main className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        {view === 'home' && <HomePage />}
-
-        {view === 'series' && (
-          <SeriesDetail
-            series={SAMPLE_SERIES}
-            onReadChapter={handleOpenReader}
-            continueInfo={continueInfo}
-          />
-        )}
-
-        {view === 'reader' && currentChapterId && (
-          <Reader
-            seriesId={SAMPLE_SERIES.id}
-            chapter={chaptersById.get(currentChapterId)}
-            chapters={SAMPLE_SERIES.chapters}
-            onSaveProgress={handleSaveProgress}
-            onExit={() => setView('series')}
-            initialState={initialReaderState}
-            onChangeChapter={(chId) => setCurrentChapterId(chId)}
-          />
-        )}
-
-        {view === 'admin' && <AdminPanel />}
-        {view === 'library' && <LibraryPage />}
-        {view === 'profile' && <ProfilePage />}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/series/:id" element={<SeriesRoute />} />
+          <Route path="/read/:seriesId/:chapterId" element={<ReaderRoute />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/library" element={<LibraryPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
-
       <Footer />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
   );
 }

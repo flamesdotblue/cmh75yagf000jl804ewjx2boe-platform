@@ -14,8 +14,8 @@ export default function Footer() {
         <div>
           <h3 className="text-neutral-200 font-semibold">Platform</h3>
           <ul className="mt-3 space-y-2">
-            <li><a className="hover:text-white" href="#">Home</a></li>
-            <li><a className="hover:text-white" href="#">Library</a></li>
+            <li><a className="hover:text-white" href="/">Home</a></li>
+            <li><a className="hover:text-white" href="/library">Library</a></li>
             <li><a className="hover:text-white" href="#">Categories</a></li>
           </ul>
         </div>

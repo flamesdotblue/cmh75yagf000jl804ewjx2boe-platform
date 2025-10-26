@@ -120,19 +120,8 @@ export default function SeriesDetail({ series, onReadChapter, continueInfo }) {
             Show {showMore ? 'less' : 'more'} <ChevronDown size={16} className={`transition ${showMore ? 'rotate-180' : ''}`} />
           </button>
 
-          <div className="mt-8 flex items-center justify-between">
-            <h2 className="text-lg font-bold">Chapters</h2>
-            <button
-              onClick={() => setSortNewest((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs hover:bg-white/10"
-              title="Toggle sort order"
-            >
-              <ArrowUpDown size={14} /> {sortNewest ? 'Newest → Oldest' : 'Oldest → Newest'}
-            </button>
-          </div>
-
           {continueInfo && (
-            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+            <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
               <div className="text-sm text-amber-200">Continue reading</div>
               <div className="text-sm text-amber-100 font-medium mt-1">{continueInfo.chapter.title}</div>
               <div className="mt-3">
@@ -145,6 +134,17 @@ export default function SeriesDetail({ series, onReadChapter, continueInfo }) {
               </div>
             </div>
           )}
+
+          <div className="mt-8 flex items-center justify-between">
+            <h2 className="text-lg font-bold">Chapters</h2>
+            <button
+              onClick={() => setSortNewest((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs hover:bg-white/10"
+              title="Toggle sort order"
+            >
+              <ArrowUpDown size={14} /> {sortNewest ? 'Newest → Oldest' : 'Oldest → Newest'}
+            </button>
+          </div>
 
           <div className="mt-6 space-y-3">
             {sortedChapters.map((ch) => (

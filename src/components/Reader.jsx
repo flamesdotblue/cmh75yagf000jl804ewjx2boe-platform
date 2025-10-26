@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Maximize, Minimize, X, Sun, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, BookOpen, AlignVerticalJustifyCenter, ArrowLeftRight } from 'lucide-react';
+import { Maximize, Minimize, X, Sun, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, BookOpen, ArrowLeftRight, Eye } from 'lucide-react';
 
 function useFullscreen() {
   const [isFullscreen, setIsFullscreen] = useState(() => Boolean(document.fullscreenElement));
@@ -82,7 +82,7 @@ export default function Reader({ seriesId, chapter, chapters, onSaveProgress, on
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [mode, rtl]);
+  }, [mode, rtl, onExit]);
 
   useEffect(() => {
     return () => {
@@ -214,7 +214,7 @@ export default function Reader({ seriesId, chapter, chapters, onSaveProgress, on
         onClick={() => setUiVisible((v) => !v)}
         className="absolute right-4 top-4 z-30 rounded-full bg-white/10 p-2 hover:bg-white/20"
       >
-        <AlignVerticalJustifyCenter size={18} />
+        <Eye size={18} />
       </button>
     </div>
   );

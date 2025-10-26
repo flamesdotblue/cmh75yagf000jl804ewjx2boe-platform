@@ -13,10 +13,10 @@ export default function NavBar() {
         </div>
 
         <div className="hidden md:flex items-center gap-2 text-sm text-neutral-300">
-          <a href="#" className="inline-flex items-center gap-2 rounded-md px-3 py-2 hover:text-white hover:bg-white/5 transition">
+          <a href="/" className="inline-flex items-center gap-2 rounded-md px-3 py-2 hover:text-white hover:bg-white/5 transition">
             <Home size={18} /> Home
           </a>
-          <a href="#" className="inline-flex items-center gap-2 rounded-md px-3 py-2 hover:text-white hover:bg-white/5 transition">
+          <a href="/library" className="inline-flex items-center gap-2 rounded-md px-3 py-2 hover:text-white hover:bg-white/5 transition">
             <Library size={18} /> Library
           </a>
         </div>
@@ -48,10 +48,10 @@ export default function NavBar() {
               </div>
             )}
           </div>
-          <button className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 hover:bg-white/10 transition">
+          <a href="/profile" className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 hover:bg-white/10 transition">
             <User size={18} />
             <span className="hidden sm:inline">Profile</span>
-          </button>
+          </a>
         </div>
       </div>
 
